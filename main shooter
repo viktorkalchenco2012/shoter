@@ -1,0 +1,298 @@
+from ursina import *
+from ursina.prefabs.first_person_controller import FirstPersonController
+from ursina.shaders import lit_with_shadows_shader
+from ursina.prefabs.health_bar import HealthBar
+from ursina.prefabs.ursfx import ursfx
+
+app = Ursina()
+
+window.exit_button.enabled = True
+window.fps_counter.enabled = True
+
+
+
+random.seed(0)
+Entity.default_shader = lit_with_shadows_shader
+
+ground = Entity(
+    model='plane', collider='box', scale=100, texture='grass.jpg', texture_scale=(4,4))
+sun = DirectionalLight()
+sun.look_at(Vec3(1,-1,-1))
+Sky(texture='sky.jpg')
+
+editor_camera = EditorCamera(
+    enabled=False,position=(10,1,5), ignore_paused=True)
+
+player = FirstPersonController(
+                            model='cube',
+                                z=-10,
+                                  color=color.green,
+                                    origin_y=-.2,
+                                      speed=10,
+                                      collider='box',
+                                      position=(10,1,5),
+                                      )
+
+player.collider = BoxCollider(
+    player, Vec3(0,1,0), Vec3(1,2,1))
+
+
+player.cursor.color=color.green
+player.cursor.scale=(0.03)
+player.cursor.rotation_z=(270)
+
+
+
+for i in range(100):
+    Entity(model='cube', origin_y=-.5, scale=2,
+        x=random.uniform(-50,40),
+        z=random.uniform(-40,40) + 5,
+        collider='box',
+        scale_y = random.uniform(2,3),
+        color=color.hsv(0, 0, random.uniform(.9, 1))
+        )
+
+HB1=HealthBar(bar_color=color.lime.tint(-.25),
+              toundness=.5,
+              scale=(1.5,.06),
+              max_value=100 )
+
+class Enemy(Entity):
+    def __init__(self, **kwargs):
+        super().__init__(parent=shootables_parent,
+                          model='cube',
+                        #rotation_y=90,
+                         scale_y=0.2, 
+                        # scale_x=0.2,
+                        # scale_z=0.2,
+                          origin_y=-.2,
+                            color=color.light_gray,
+                            texture='persone.jpg', 
+                            collider='box',
+                              **kwargs)
+        self.health_bar = Entity(parent=self, y=1.2, model='sphere', color=color.red, world_scale=(1.5,.1,.1))
+        self.max_hp = 50
+        self.hp = self.max_hp
+
+    def update(self):
+        dist = distance_xz(player.position, self.position)
+        if dist > 40:
+            return
+        
+
+
+        self.health_bar.alpha = max(0, self.health_bar.alpha - time.dt)
+
+
+        self.look_at_2d(player.position, 'y')
+        hit_info = raycast(self.world_position + Vec3(0,1,0), self.forward, 300, ignore=(self,))
+        # print(hit_info.entity)
+        if hit_info.entity == player:
+            if dist > 2:
+                self.position += self.forward * time.dt * 20
+
+    @property
+    def hp(self):
+        return self._hp
+
+    @hp.setter
+    def hp(self, value):
+        self._hp = value
+        self.rotation_y=90
+        if value <= 0:
+            destroy(self)
+            return
+
+        self.health_bar.world_scale_x = self.hp / self.max_hp * 1.5
+        self.health_bar.alpha = 1
+    
+class Enemy1(Entity):
+    def __init__(self1, **kwargs):
+        super().__init__(parent=shootables_parent,
+                          model='cube',
+                          speed=19,
+                         scale_y=3, 
+                          origin_y=-.6,
+                            color=color.light_gray,
+                            texture='monster.jpg', 
+                            collider='box',
+                              **kwargs,
+                              )
+        self1.health_bar = Entity(parent=self1, y=1.2, model='cube', color=color.green, world_scale=(20,.1,0.1))
+        self1.max_hp = 1000
+        self1.hp = self1.max_hp
+
+    def update(self1):
+        self1.speed=19
+        dist = distance_xz(player.position, self1.position) 
+        if dist > 40:
+            return
+        
+
+
+        self1.health_bar.alpha = max(0, self1.health_bar.alpha - time.dt)
+
+
+        self1.look_at_2d(player.position, 'y')
+        hit_info = raycast(self1.world_position + Vec3(0,1,0), self1.forward, 30, ignore=(self1,))
+        # print(hit_info.entity)
+        if hit_info.entity == player:
+            if dist > 2:
+                self1.position += self1.forward * time.dt * 5
+
+    @property
+    def hp(self1):
+        return self1._hp
+
+    @hp.setter
+    def hp(self1, value1):
+        self1._hp = value1
+        if value1 <= 0:
+            destroy(self1)
+            return
+
+        self1.health_bar.world_scale_x = self1.hp / self1.max_hp * 4.5
+        self1.health_bar.alpha = 1
+
+
+def damage(power):
+   HB1.value -= power 
+
+def heal(power):
+   HB1.value += power
+
+def soot3():
+    if held_keys['left mouse']   :
+        gun.position = (.2,-.2,.3)
+        shoot()
+    elif held_keys['right mouse']   :
+        gun.position = (.2,-.2,.3)
+        shoot2()
+    else:
+        gun.position =(.5,-.2,.3)
+
+def update():
+
+    if held_keys['r'] :
+      gun.rotation_y=-45
+      player.speed=30
+      gun.position = (.5,-.2,.08)
+
+    elif held_keys['s'] :
+        player.speed=5
+        gun.position = (.5,-.2,.3)
+
+    else:
+       gun.rotation_y=0
+       player.speed=10
+       gun.position =(.5,-.2,.1)
+
+    soot3()
+    #update2()
+   # Enemy.rotation_y=90
+
+
+   #
+
+gun = Entity(model='cube',
+             texture='gun.jpg',
+               parent=camera, 
+               position=(.5,-.25,.25),
+                 scale=(.3,.2,1), 
+                 origin_z=-.5,
+             # color=color.red,
+                on_cooldown=False)
+gun.muzzle_flash = Entity(parent=gun,
+                           z=1, world_scale=.5,
+                             model='sphere',
+                               color=color.yellow,
+                                 enabled=False)
+
+shootables_parent = Entity()
+mouse.traverse_target = shootables_parent
+
+
+def update2():
+     #   player.get_position
+      #  enemies.get_position
+      #  enemies1.get_position
+
+      #  dist = distance_xz(player.position,
+      #                       enemies.position,
+       #                      enemies1.position)
+
+        if player == enemies:
+            damage(5)
+        elif player == enemies1:
+            damage(50)
+        else:
+            heal(3)
+
+        if HB1==0:
+           player.pop
+     
+def shoot(
+        #cooldown
+        ):
+    if not gun.on_cooldown:
+        #print('shoot')
+        gun.on_cooldown = True
+        gun.muzzle_flash.enabled=True
+        ursfx([(0.0, 0.0), (0.1, 0.9), (0.15, 0.75), (0.3, 0.14), (0.6, 0.0)],
+               volume=0.5,
+                 wave='noise',
+                   pitch=random.uniform(-13,-12),
+                     pitch_change=-12, 
+                     speed=3)
+        #cooldown()
+        invoke(gun.muzzle_flash.disable, delay=.05)
+        invoke(setattr, gun, 'on_cooldown', False, delay=.15)
+        if mouse.hovered_entity and hasattr(mouse.hovered_entity, 'hp'):
+            mouse.hovered_entity.hp -= 10
+            mouse.hovered_entity.blink(color.red)
+
+def shoot2():
+    if not gun.on_cooldown:
+        #print('shoot')
+        gun.on_cooldown = True
+        gun.muzzle_flash.enabled=True
+        ursfx([(0.0, 0.0), (0.1, 0.9), (0.15, 0.75), (0.3, 0.14), (0.6, 0.0)],
+               volume=0.5,
+                 wave='noise',
+                   pitch=random.uniform(-13,-12),
+                     pitch_change=-12, 
+                     speed=0.1)
+        #cooldown()
+        invoke(gun.muzzle_flash.disable, delay=.1)
+        invoke(setattr, gun, 'on_cooldown', False, delay=.001)
+        if mouse.hovered_entity and hasattr(mouse.hovered_entity, 'hp'):
+            mouse.hovered_entity.hp -= 500
+            mouse.hovered_entity.blink(color.green)
+
+
+def pause_input(key):
+    if key == 'p':    # press tab to toggle edit/play mode
+        editor_camera.enabled = not editor_camera.enabled
+
+        player.visible_self = editor_camera.enabled
+        player.cursor.enabled = not editor_camera.enabled
+        gun.enabled = not editor_camera.enabled
+        mouse.locked = not editor_camera.enabled
+        editor_camera.position = player.position
+
+        application.paused = editor_camera.enabled
+
+pause_handler = Entity(
+    ignore_paused=True, input=pause_input)
+
+
+
+enemies = [
+    Enemy(x=x*8) for x in range(5)]
+enemies = [
+    Enemy(z=z*8) for z in range(5)]
+
+enemies1 = [
+    Enemy1(x=x*30) for x in range(2)]
+
+app.run()
