@@ -61,11 +61,8 @@ class Enemy(Entity):
     def __init__(self, **kwargs):
         super().__init__(parent=shootables_parent,
                           model='cube',
-                        #rotation_y=90,
-                         scale_y=0.2, 
-                        # scale_x=0.2,
-                        # scale_z=0.2,
-                          origin_y=-.2,
+                           scale_y=0.2, 
+                            origin_y=-.2,
                             color=color.light_gray,
                             texture='persone.jpg', 
                             collider='box',
@@ -113,8 +110,7 @@ class Enemy1(Entity):
                           speed=19,
                          scale_y=3, 
                           origin_y=-.6,
-                            color=color.light_gray,
-                            texture='monster.jpg', 
+                            color=color.light_gray, 
                             collider='box',
                               **kwargs,
                               )
@@ -135,7 +131,7 @@ class Enemy1(Entity):
 
         self1.look_at_2d(player.position, 'y')
         hit_info = raycast(self1.world_position + Vec3(0,1,0), self1.forward, 30, ignore=(self1,))
-        # print(hit_info.entity)
+     
         if hit_info.entity == player:
             if dist > 2:
                 self1.position += self1.forward * time.dt * 5
@@ -189,10 +185,6 @@ def update():
 
     soot3()
     #update2()
-   # Enemy.rotation_y=90
-
-
-   #
 
 gun = Entity(model='cube',
              texture='gun.jpg',
@@ -213,13 +205,7 @@ mouse.traverse_target = shootables_parent
 
 
 def update2():
-     #   player.get_position
-      #  enemies.get_position
-      #  enemies1.get_position
 
-      #  dist = distance_xz(player.position,
-      #                       enemies.position,
-       #                      enemies1.position)
 
         if player == enemies:
             damage(5)
@@ -235,7 +221,6 @@ def shoot(
         #cooldown
         ):
     if not gun.on_cooldown:
-        #print('shoot')
         gun.on_cooldown = True
         gun.muzzle_flash.enabled=True
         ursfx([(0.0, 0.0), (0.1, 0.9), (0.15, 0.75), (0.3, 0.14), (0.6, 0.0)],
